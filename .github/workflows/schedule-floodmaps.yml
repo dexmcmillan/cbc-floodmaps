@@ -18,12 +18,18 @@ jobs:
         with:
           python-version: "3.8"
 
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-activate-base: true
+          activate-environment: ""
+
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          conda install geopandas
 
       - name: Update BC flood warning chart
         env: 
             DW_AUTH_TOKEN: ${{ secrets.DW_AUTH_TOKEN }}
         run: python3 script-bcfloods.py
+
+      
