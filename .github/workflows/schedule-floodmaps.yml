@@ -18,14 +18,14 @@ jobs:
         with:
           python-version: "3.8"
 
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
       - uses: conda-incubator/setup-miniconda@v2
         with:
           auto-activate-base: true
           activate-environment: ""
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
 
       - name: Update BC flood warning chart
         env: 
