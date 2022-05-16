@@ -1,25 +1,33 @@
 import requests
 import json
 import os
+import datetime
+from datawrapper import Datawrapper
 
 class DatawrapperMaps:
     
-    def __init__(self):
-        pass
+    CHART_ID = None
+    
+    def __init__(self, chart_id):
+        self.CHART_ID = chart_id
         
-    def upload(self, data, chart_id):
-        
+    def __auth(self):
         try:
             with open('./auth.txt', 'r') as f:
                 DW_AUTH_TOKEN = f.read().strip()
         except:
             DW_AUTH_TOKEN = os.environ['DW_AUTH_TOKEN']
+            
+        return DW_AUTH_TOKEN
+        
+    def upload(self, data):
+        
         
         data = data.to_crs("EPSG:4326")
         data.to_file("floodwarnings.geojson", driver='GeoJSON')
         
         headers = {
-            "Authorization": f"Bearer {DW_AUTH_TOKEN}"
+            "Authorization": f"Bearer {self.__auth()}"
         }
 
         with open("floodwarnings.geojson", 'r') as f:
@@ -47,7 +55,7 @@ class DatawrapperMaps:
                         'outline': '2px'},
                 'feature': feature,
                 'properties': {'fill': feature["properties"]["fill"],
-                            'fill-opacity': 0.2,
+                            'fill-opacity': feature["properties"]["opacity"],
                             'stroke': feature["properties"]["stroke"],
                             'stroke-width': 1,
                             'stroke-opacity': 1,
@@ -66,8 +74,56 @@ class DatawrapperMaps:
             
         payload = {"markers": new_features}
 
-        response = requests.put(f"https://api.datawrapper.de/v3/charts/{chart_id}/data", headers=headers, data=json.dumps(payload))
+        response = requests.put(f"https://api.datawrapper.de/v3/charts/{self.CHART_ID}/data", headers=headers, data=json.dumps(payload))
 
         print(response)
         
-        return payload
+        return self
+    
+    def title(self, string):
+
+
+        headers = {
+            "Accept": "*/*",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.__auth()}"
+        }
+        
+        data = {
+            "title": string
+            }
+
+        response = requests.patch(f"https://api.datawrapper.de/v3/charts/{self.CHART_ID}", headers=headers, data=json.dumps(data))
+
+
+        print(response.text)
+        
+        return self
+    
+    def timestamp(self):
+        
+        dw = Datawrapper(access_token=self.__auth())
+        
+        today = datetime.datetime.today()
+        time = today.strftime('%I:%M') + " " + ".".join(list(today.strftime('%p'))).lower() + "."
+        day = today.strftime('%B %d, %Y')
+    
+
+        headers = {
+            "Accept": "*/*",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.__auth()}"
+        }
+        
+        note = f"Last updated on {day} at {time}".replace(" 0", " ")
+        
+        data = {
+            "annotate": {
+                "notes": note
+            }
+        }
+
+        requests.patch(f"https://api.datawrapper.de/v3/charts/{self.CHART_ID}", headers=headers, data=json.dumps(data))
+        dw.update_metadata(chart_id=self.CHART_ID, properties=data)
+        
+        return self
