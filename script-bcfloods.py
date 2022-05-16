@@ -10,6 +10,8 @@ r = requests.get("https://services6.arcgis.com/ubm4tcTYICKBpist/arcgis/rest/serv
 
 data = geopandas.read_file(json.dumps(r.json()))
 
+print(data)
+
 data["stroke"] = data["Advisory"].replace(
     {
         1.0: "#f8c325",
@@ -21,7 +23,7 @@ data["fill"] = data["stroke"]
 data["opacity"] = 0.5
 data['id'] = range(0, len(data))
 data["id"] = data['id'].apply(lambda x: f"m{x}")
-data["title"] = data["Advisory"].replace({1.0: "High Streamflow Advisory", 2.0: "Flood Watch", 3.0: "Flood Warning"})
+data["title"] = data["Major_Basin"]
 
 
 chart = dwmaps.DatawrapperMaps(chart_id=CHART_ID)
